@@ -1,0 +1,18 @@
+Network packet interceptor
+==========================
+It drops the packets on a given destination ip and destination port
+
+How to build
+============
+make
+
+How to use
+==========
+You can run it with or without parameters
+sudo insmod cool.ko enable_netfilter=1 dest_ip_str="192.178.200.120" dest_port=8086
+sudo dmesg -T
+cat /proc/cool/enabled
+cat /proc/cool/destination
+echo "1" > /proc/cool/enabled
+echo "10.0.0.2:8080" > /proc/cool/destination
+

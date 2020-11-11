@@ -21,14 +21,28 @@ MODULE_AUTHOR("aungureanu@riverbed.com");
 MODULE_LICENSE("GPL");
 
 
+unsigned int dest_ip = 0x7F000001; //127.0.0.1
+unsigned int dest_port = 0x0000;
+
+int enable_netfilter = 0;
+module_param(enable_netfilter, int, 0);
+MODULE_PARM_DESC(ip, "enable traffic filtering");
+
+char * dest_ip_str = "127.0.1.1";
+module_param(dest_ip_str, charp, 0);
+MODULE_PARM_DESC(ip, "intercept traffic from tp ip");
+ 
+module_param(dest_port, int, 0);
+MODULE_PARM_DESC(dest_port, "intercept traffic to this port");
+
+
+
 
 /* Defines whether the nf hooks are enabled or not */
 static bool cool_nf_enabled = false;
 /* We need this global, so we can remove it at exit */
 struct proc_dir_entry *cool_proc_dir, *proc_enabled, *proc_ip_dest;
 
-unsigned int dest_ip = 0x7F000001; //127.0.0.1
-unsigned int dest_port = 0x0000;
  
 static const struct file_operations cool_proc_ops = {
         .open = cool_proc_open,
@@ -199,6 +213,8 @@ static unsigned int cool_out_hookfn(void *priv, struct sk_buff *skb,
  * but it can be anything. Please notice the `(void)` instead of `()`. */
 static int cool_init(void)
 {
+        unsigned int ipH, iph, ipl, ipL;
+        int err;
         pr_info("cool module is initializing!\n");
         cool_proc_dir = proc_mkdir("cool", NULL);
         if (!cool_proc_dir) {
@@ -216,6 +232,28 @@ static int cool_init(void)
                 pr_err("proc_create failed to register /proc/cool/destination\n");
                 return ENOMEM;
         }
+
+        sscanf(dest_ip_str, "%d.%d.%d.%d", &ipH, &iph, &ipl, &ipL);
+        dest_ip = (ipH << 24) + (iph << 16) + (ipl << 8) + ipL;
+
+        printk("enable_netfilter: %d\n", enable_netfilter);
+        if (enable_netfilter)
+        {
+                /* Now do the  nf_register_net_hooks/nf_unregister_net_hooks here. */
+                err = nf_register_net_hooks(&init_net, netfilter_ops, ARRAY_SIZE(netfilter_ops));
+                if (err)
+                        pr_err("nf_register_net_hook failed: %d\n", err);
+                else
+                        pr_info("cool: registerd netfilter hooks\n");
+        
+                /* Don't forget to update the global state in cool_nf_enabled */
+                cool_nf_enabled = true;
+     }
+        printk("destination ip: %d.%d.%d.%d\n", (unsigned char)(dest_ip >> 24),
+                                        (unsigned char)(dest_ip >> 16),
+                                        (unsigned char)(dest_ip >> 8),
+                                        (unsigned char)(dest_ip));
+        printk("destination port: %d\n", dest_port);
  
         return 0;
 }
