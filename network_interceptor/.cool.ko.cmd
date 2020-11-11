@@ -1,0 +1,1 @@
+cmd_/home/alin/network_interceptor/cool.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000  --build-id  -T ./scripts/module-common.lds -o /home/alin/network_interceptor/cool.ko /home/alin/network_interceptor/cool.o /home/alin/network_interceptor/cool.mod.o;  true
