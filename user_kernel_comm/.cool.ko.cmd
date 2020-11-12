@@ -1,0 +1,1 @@
+cmd_/home/alin/git_code_samples/code_samples/user_kernel_comm/cool.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000  --build-id  -T ./scripts/module-common.lds -o /home/alin/git_code_samples/code_samples/user_kernel_comm/cool.ko /home/alin/git_code_samples/code_samples/user_kernel_comm/cool.o /home/alin/git_code_samples/code_samples/user_kernel_comm/cool.mod.o;  true

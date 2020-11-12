@@ -1,0 +1,1 @@
+cmd_/home/alin/git_code_samples/code_samples/user_kernel_comm/built-in.a := rm -f /home/alin/git_code_samples/code_samples/user_kernel_comm/built-in.a; ar cDPrST /home/alin/git_code_samples/code_samples/user_kernel_comm/built-in.a 

@@ -1,0 +1,1 @@
+cmd_/home/alin/git_code_samples/code_samples/user_kernel_comm/cool.mod := { echo  /home/alin/git_code_samples/code_samples/user_kernel_comm/cool.o; echo; } > /home/alin/git_code_samples/code_samples/user_kernel_comm/cool.mod

@@ -1,0 +1,15 @@
+User <-> Kernel mode communication
+==================================
+This is a simple demo of user-kernel communication.
+The user app sends a message to the kernel and the later sends one back.
+
+How to build
+============
+make
+gcc cool_user.c -o cool_user
+
+How to use
+==========
+sudo insmod cool.ko
+./cool_user
+sudo dmesg -T
