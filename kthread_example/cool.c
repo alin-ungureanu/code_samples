@@ -6,6 +6,7 @@
 #include <linux/signal.h>
 #include <linux/sched/signal.h>
 #include <linux/mutex.h>
+#include <linux/spinlock.h>
 
 /* A good practice to have all of these */
 MODULE_DESCRIPTION("A cool little kthread example");
@@ -16,7 +17,8 @@ MODULE_LICENSE("GPL");
 
 #define COOL_2_THREAD_NAME  "cool_thread_2"
 
-DEFINE_MUTEX(cool_mutex);
+
+DEFINE_SPINLOCK(cool_spinlock);
 
 
 
@@ -39,10 +41,10 @@ static int thread_fn(void *param)
     while (!thread_should_stop())
     {
 
-        mutex_lock(&cool_mutex);
+        spin_lock(&cool_spinlock);
         i = count;
         count++;
-        mutex_unlock(&cool_mutex);
+        spin_unlock(&cool_spinlock);
         pr_info("thread running: %s, count %d\n", (char*)param, i);
 
         ssleep(5);
@@ -73,7 +75,7 @@ static int thread_fn(void *param)
 static int __init cool_init(void)
 {
     pr_info("cool init\n");
-    mutex_init(&cool_mutex);
+    spin_lock_init(&cool_spinlock);
     //Create the kernel thread with name 'cool thread'
     thread_st1 = kthread_create(thread_fn, COOL_1_THREAD_NAME, COOL_1_THREAD_NAME);
     if (thread_st1)
