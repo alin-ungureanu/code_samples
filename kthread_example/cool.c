@@ -5,20 +5,26 @@
 #include <linux/string.h>
 #include <linux/signal.h>
 #include <linux/sched/signal.h>
+#include <linux/mutex.h>
+
+/* A good practice to have all of these */
+MODULE_DESCRIPTION("A cool little kthread example");
+MODULE_AUTHOR("aungureanu@riverbed.com");
+MODULE_LICENSE("GPL");
 
 #define COOL_1_THREAD_NAME  "cool_thread_1"
 
 #define COOL_2_THREAD_NAME  "cool_thread_2"
 
-/* A good practice to have all of these */
-MODULE_DESCRIPTION("A cool little kthread example");
-MODULE_AUTHOR("csirb@riverbed.com");
-MODULE_LICENSE("GPL");
+DEFINE_MUTEX(cool_mutex);
+
+
 
 static struct task_struct *thread_st1;
 static struct task_struct *thread_st2;
 
 static int stop_thread = 0;
+static int count = 0;
 // Function executed by kernel thread
 
 static int thread_should_stop(void)
@@ -28,10 +34,17 @@ static int thread_should_stop(void)
 
 static int thread_fn(void *param)
 {
+    int i;
     allow_signal(SIGKILL);
     while (!thread_should_stop())
     {
-        pr_info("thread running: %s\n", (char*)param);
+
+        mutex_lock(&cool_mutex);
+        i = count;
+        count++;
+        mutex_unlock(&cool_mutex);
+        pr_info("thread running: %s, count %d\n", (char*)param, i);
+
         ssleep(5);
         //determining for which thread is the SIGKILL sent
         if (0 == strcmp(param, COOL_1_THREAD_NAME))
@@ -60,6 +73,7 @@ static int thread_fn(void *param)
 static int __init cool_init(void)
 {
     pr_info("cool init\n");
+    mutex_init(&cool_mutex);
     //Create the kernel thread with name 'cool thread'
     thread_st1 = kthread_create(thread_fn, COOL_1_THREAD_NAME, COOL_1_THREAD_NAME);
     if (thread_st1)
