@@ -28,26 +28,32 @@ static int thread_should_stop(void)
 
 static int thread_fn(void *param)
 {
-    //allow_signal(SIGKILL); - not working
+    allow_signal(SIGKILL);
     while (!thread_should_stop())
     {
         pr_info("thread running: %s\n", (char*)param);
         ssleep(5);
-        /*if (0 == strcmp(param, COOL_1_THREAD_NAME))
+        //determining for which thread is the SIGKILL sent
+        if (0 == strcmp(param, COOL_1_THREAD_NAME))
         {
-            if (signal_pending(thread_st1)) - not working
+            if (signal_pending(thread_st1))
             {
+                //assigning NULL to the task_struct, to not wait for the threads with kthread_stop()
+                thread_st1 = NULL;
                 break;
             }
         }
         else if (signal_pending(thread_st2))
         {
+            //assigning NULL to the task_struct, to not wait for the threads with kthread_stop()
+            thread_st2 = NULL;
             break;
-        }*/
+        }
     }
     pr_info("thread stopping: %s\n", (char*)param);
 
     do_exit(0);
+
     return 0;
 }
 // Module Initialization
