@@ -1,0 +1,1 @@
+cmd_/home/alin/kthread_example/cool.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000  --build-id  -T ./scripts/module-common.lds -o /home/alin/kthread_example/cool.ko /home/alin/kthread_example/cool.o /home/alin/kthread_example/cool.mod.o;  true
