@@ -18,8 +18,22 @@ MODULE_LICENSE("GPL");
 #define COOL_2_THREAD_NAME  "cool_thread_2"
 
 
-DEFINE_SPINLOCK(cool_spinlock);
+typedef enum ThreadID
+{
+    Thread0 = 0,
+    Thread1,
+    Thread2,
+    Thread3,
+    Thread4,
+    Thread5,
+    Thread6,
+    Thread7,
+    Thread8,
+    Thread9,
+} ThreadID;
 
+//creates and initializes the lock
+DEFINE_SPINLOCK(cool_spinlock);
 
 
 static struct task_struct *thread_st1;
@@ -27,6 +41,9 @@ static struct task_struct *thread_st2;
 
 static int stop_thread = 0;
 static int count = 0;
+
+static int thread1 = Thread1;
+static int thread2 = Thread2;
 // Function executed by kernel thread
 
 static int thread_should_stop(void)
@@ -45,27 +62,25 @@ static int thread_fn(void *param)
         i = count;
         count++;
         spin_unlock(&cool_spinlock);
-        pr_info("thread running: %s, count %d\n", (char*)param, i);
+        pr_info("kthread '%s' running on %d\n", current->comm, smp_processor_id());
 
         ssleep(5);
-        //determining for which thread is the SIGKILL sent
-        if (0 == strcmp(param, COOL_1_THREAD_NAME))
-        {
-            if (signal_pending(thread_st1))
-            {
-                //assigning NULL to the task_struct, to not wait for the threads with kthread_stop()
-                thread_st1 = NULL;
-                break;
-            }
-        }
-        else if (signal_pending(thread_st2))
+        //determining if is the SIGKILL sent
+        if (signal_pending(current))
         {
             //assigning NULL to the task_struct, to not wait for the threads with kthread_stop()
-            thread_st2 = NULL;
+            if (*(int *)param == Thread1)
+            {
+                thread_st1 = NULL;
+            }
+            else if (*(int *)param == Thread2)
+            {
+                thread_st2 = NULL;
+            }
             break;
         }
     }
-    pr_info("thread stopping: %s\n", (char*)param);
+    pr_info("thread stopping: %s\n", current->comm);
 
     do_exit(0);
 
@@ -75,9 +90,8 @@ static int thread_fn(void *param)
 static int __init cool_init(void)
 {
     pr_info("cool init\n");
-    spin_lock_init(&cool_spinlock);
     //Create the kernel thread with name 'cool thread'
-    thread_st1 = kthread_create(thread_fn, COOL_1_THREAD_NAME, COOL_1_THREAD_NAME);
+    thread_st1 = kthread_create(thread_fn, &thread1, COOL_1_THREAD_NAME);
     if (thread_st1)
     {
         pr_info("%s created successfully\n", COOL_1_THREAD_NAME);
@@ -89,7 +103,7 @@ static int __init cool_init(void)
         pr_err("%s creation failed\n", COOL_1_THREAD_NAME);
     }
     //kthread_run is a macro which contains kthread_create and wake_up_process
-    thread_st2 = kthread_run(thread_fn, COOL_2_THREAD_NAME, COOL_2_THREAD_NAME);
+    thread_st2 = kthread_run(thread_fn, &thread2, COOL_2_THREAD_NAME);
     if (thread_st2)
     {
         pr_info("%s created successfully\n", COOL_2_THREAD_NAME);
