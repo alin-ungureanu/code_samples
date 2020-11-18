@@ -95,6 +95,8 @@ static int __init cool_init(void)
     if (thread_st1)
     {
         pr_info("%s created successfully\n", COOL_1_THREAD_NAME);
+        //bind thread to CPU 0
+        kthread_bind(thread_st1, 0);
         //thread is created and needs to be awaken
         wake_up_process(thread_st1);
     }
