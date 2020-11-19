@@ -7,6 +7,7 @@
 #include <linux/sched/signal.h>
 #include <linux/mutex.h>
 #include <linux/spinlock.h>
+#include <linux/slab.h>
 
 /* A good practice to have all of these */
 MODULE_DESCRIPTION("A cool little kthread example");
@@ -86,9 +87,36 @@ static int thread_fn(void *param)
 
     return 0;
 }
+
+
+static int thread_fn_6sec_run(void *param)
+{
+
+    int i;
+    struct completion *c = (struct completion*)param;
+    for (i = 0; i < 3; ++i)
+    {
+        pr_info("kthread '%s' running on [%d]\n", current->comm, smp_processor_id());
+
+        ssleep(2);
+    }    
+    pr_info("thread stopping: %s\n", current->comm);
+
+    complete(c);
+
+    do_exit(0);
+
+    return 0;
+}
+
+
+
 // Module Initialization
 static int __init cool_init(void)
 {
+    int cpu;
+    struct completion *completions;
+
     pr_info("cool init\n");
     //Create the kernel thread with name 'cool thread'
     thread_st1 = kthread_create(thread_fn, &thread1, COOL_1_THREAD_NAME);
@@ -114,7 +142,31 @@ static int __init cool_init(void)
     {
         pr_err("%s creation failed\n", COOL_1_THREAD_NAME);
     }
+    /* We must allocate them because we don't know how many of them are. */
+    completions = (struct completion *)kcalloc(num_online_cpus(), sizeof(*completions), GFP_KERNEL);
 
+    for_each_online_cpu(cpu) {
+        struct task_struct *thread;
+        /* It's not global, so we must initialize it onstack. See completion.h on why. */
+        completions[cpu] = COMPLETION_INITIALIZER_ONSTACK(completions[cpu]);
+        thread = kthread_create(thread_fn_6sec_run, &completions[cpu], "cool_thread[%d]", cpu);
+        if (IS_ERR(thread)) {
+                pr_err("Failed to create thread on cpu %d: %ld\n", cpu, (long)thread);
+                continue;
+        }
+            
+        kthread_bind(thread, cpu);
+        wake_up_process(thread);
+    }
+    /* Will wait for each thread to finish. If it's already finished, it will just return.
+        * Basically, it's like pthread_join. */
+    for_each_online_cpu(cpu) {
+            wait_for_completion(&completions[cpu]);
+    }
+
+    kfree(completions);
+
+    pr_info("cool: init done only after threads\n");
 
     return 0;
 }
